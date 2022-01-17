@@ -1,0 +1,100 @@
+{
+  "project_info": {
+    "project_number": "878009456299",
+    "project_id": "my-flutter-apps-723",
+    "storage_bucket": "my-flutter-apps-723.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878009456299:android:67bd7ca0c39bc198ce49ee",
+        "android_client_info": {
+          "package_name": "com.rmd.finance.budgetTracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "878009456299-2jg66n1mi0h08rt5tq2d9ggvspnaqfe1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rmd.finance.budgetTracker",
+            "certificate_hash": "ac540eaf7c264723e59d91d9019174286c678edb"
+          }
+        },
+        {
+          "client_id": "878009456299-d8eo2h34d15ffqi0s6imjkucn3ihcgjs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9ZAutyG-Bgc2qU3NTvGz-PR7PnMTlFZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "878009456299-d8eo2h34d15ffqi0s6imjkucn3ihcgjs.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "878009456299-3845vd2hcgpv8tfvlb9avsvf6r91md6f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.rmd.finance",
+                "app_store_id": "9876543210"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878009456299:android:dc9e982c5a3890bdce49ee",
+        "android_client_info": {
+          "package_name": "com.rmd.finance.budget_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "878009456299-b48sd6ou71parppio6niu20hdkk3m6e7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rmd.finance.budget_tracker",
+            "certificate_hash": "ac540eaf7c264723e59d91d9019174286c678edb"
+          }
+        },
+        {
+          "client_id": "878009456299-d8eo2h34d15ffqi0s6imjkucn3ihcgjs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9ZAutyG-Bgc2qU3NTvGz-PR7PnMTlFZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "878009456299-d8eo2h34d15ffqi0s6imjkucn3ihcgjs.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "878009456299-3845vd2hcgpv8tfvlb9avsvf6r91md6f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.rmd.finance",
+                "app_store_id": "9876543210"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
