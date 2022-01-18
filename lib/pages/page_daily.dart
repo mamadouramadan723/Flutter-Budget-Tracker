@@ -1,9 +1,11 @@
-import 'package:budget_tracker/json/daily_json.dart';
-import 'package:flutter/foundation.dart';
-import 'package:budget_tracker/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutterfire_ui/auth.dart';
+import 'package:budget_tracker/theme/colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
-//import 'package:timeline_date_picker/timeline_date_picker.dart';
+import 'package:budget_tracker/json/daily_json.dart';
+import 'package:calendar_timeline/calendar_timeline.dart';
 
 class DailyPage extends StatefulWidget {
   const DailyPage({Key? key}) : super(key: key);
@@ -12,21 +14,69 @@ class DailyPage extends StatefulWidget {
   _DailyPageState createState() => _DailyPageState();
 }
 
-DateTime activeDay = DateTime.now();
-
 class _DailyPageState extends State<DailyPage> {
+  DateTime activeDay = DateTime.now();
+  String userId = "";
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: grey.withOpacity(0.05),
-      body: getBody(),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return RegisterScreen(
+            //showAuthActionSwitch: false,
+            headerBuilder: (context, constraints, _) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(
+                      'https://firebase.flutter.dev/img/flutterfire_300x.png'),
+                ),
+              );
+            },
+            subtitleBuilder: (context, action) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  action == AuthAction.signIn
+                      ? 'Welcome to Budget Tracker! Please sign in to continue.'
+                      : 'Welcome to Budget Tracker! Please create an account to continue.',
+                ),
+              );
+            },
+            footerBuilder: (context, _) {
+              return const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Text(
+                  'By signing in, you agree to our terms and conditions.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              );
+            },
+            providerConfigs: const [
+              GoogleProviderConfiguration(clientId: ''),
+              PhoneProviderConfiguration(),
+              EmailProviderConfiguration()
+            ],
+          );
+        }
+
+        // Render your application if authenticated
+        userId = snapshot.data!.uid.toString();
+        return Scaffold(
+          backgroundColor: grey.withOpacity(0.05),
+          body: getBody(),
+        );
+      },
     );
   }
 
   Widget getBody() {
-    DateTime today = DateTime.now();
-    DateTime startDate = DateTime(today.year, today.month - 1, today.day);
-    DateTime endDate = DateTime(today.year, today.month + 1, today.day);
+    DateTime now = DateTime.now();
+    DateTime startDate = now.subtract(const Duration(days: 180));
+    DateTime endDate = now.add(const Duration(days: 180));
 
     var size = MediaQuery.of(context).size;
     return SingleChildScrollView(
@@ -50,7 +100,7 @@ class _DailyPageState extends State<DailyPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
                       Text(
-                        "My Daily Transaction",
+                        "Daily Transaction",
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -62,10 +112,21 @@ class _DailyPageState extends State<DailyPage> {
                   const SizedBox(
                     height: 25,
                   ),
-                  /*DatePicker(
-                      startDate: startDate,
-                      endDate: endDate,
-                      onChange: handleChange),*/
+                  CalendarTimeline(
+                    initialDate: DateTime.now(),
+                    firstDate: startDate,
+                    lastDate: endDate,
+                    onDateSelected: (date) =>
+                        {debugPrint("++++" + date.toString())},
+                    leftMargin: 20,
+                    monthColor: Colors.blueGrey,
+                    dayColor: Colors.teal[200],
+                    activeDayColor: Colors.white,
+                    activeBackgroundDayColor: Colors.blue,
+                    dotsColor: Colors.blue,
+                    //selectableDayPredicate: (date) => date.day != 23,
+                    locale: 'en_ISO',
+                  )
                 ],
               ),
             ),
@@ -197,8 +258,4 @@ class _DailyPageState extends State<DailyPage> {
       ),
     );
   }
-}
-
-handleChange(DateTime date) {
-  activeDay = date;
 }

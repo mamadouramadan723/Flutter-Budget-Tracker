@@ -1,27 +1,41 @@
-class MyDaily {
+class DailyTransaction {
   String userId;
-  String dailyId;
-  String name;
+  String transactionId;
+  String transactionName;
+  String transactionDescription;
   String date;
-  String price;
+  int timeStamp;
+  double transactionPrice;
   String icon;
 
-  MyDaily(this.userId, this.dailyId, this.name, this.date, this.price, this.icon);
+  DailyTransaction(
+      this.userId,
+      this.transactionId,
+      this.transactionName,
+      this.transactionDescription,
+      this.date,
+      this.transactionPrice,
+      this.timeStamp,
+      this.icon);
 
-  MyDaily.fromJson(Map<String, dynamic> json)
+  DailyTransaction.fromJson(Map<String, dynamic> json)
       : userId = json['userId'],
-        dailyId = json['dailyId'],
-        name = json['name'],
+        transactionId = json['dailyId'],
+        transactionName = json['name'],
+        transactionDescription = json['transactionDescription'],
         date = json['date'],
-        price = json['price'],
+        timeStamp = json['timeStamp'],
+        transactionPrice = json['price'],
         icon = json['icon'];
 
   Map<String, dynamic> toJson() => {
         'userId': userId,
-        'dailyId': dailyId,
-        'name': name,
+        'dailyId': transactionId,
+        'name': transactionName,
+        'transactionDescription': transactionDescription,
         'date': date,
-        'price': price,
+        'price': transactionPrice,
+        'timeStamp': timeStamp,
         'icon': icon,
       };
 }

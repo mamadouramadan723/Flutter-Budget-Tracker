@@ -1,20 +1,74 @@
 import 'package:budget_tracker/json/budget_json.dart';
 import 'package:budget_tracker/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutterfire_ui/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 
 class BudgetPage extends StatefulWidget {
+  const BudgetPage({Key? key}) : super(key: key);
+
   @override
   _BudgetPageState createState() => _BudgetPageState();
 }
 
 class _BudgetPageState extends State<BudgetPage> {
   int activeDay = 3;
+  String userId = "";
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: grey.withOpacity(0.05),
-      body: getBody(),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return RegisterScreen(
+            //showAuthActionSwitch: false,
+            headerBuilder: (context, constraints, _) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(
+                      'https://firebase.flutter.dev/img/flutterfire_300x.png'),
+                ),
+              );
+            },
+            subtitleBuilder: (context, action) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  action == AuthAction.signIn
+                      ? 'Welcome to Budget Tracker! Please sign in to continue.'
+                      : 'Welcome to Budget Tracker! Please create an account to continue.',
+                ),
+              );
+            },
+            footerBuilder: (context, _) {
+              return const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Text(
+                  'By signing in, you agree to our terms and conditions.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              );
+            },
+            providerConfigs: const [
+              GoogleProviderConfiguration(clientId: ''),
+              PhoneProviderConfiguration(),
+              EmailProviderConfiguration()
+            ],
+          );
+        }
+
+        // Render your application if authenticated
+        userId = snapshot.data!.uid.toString();
+        return Scaffold(
+          backgroundColor: grey.withOpacity(0.05),
+          body: getBody(),
+        );
+      },
     );
   }
 
@@ -49,7 +103,7 @@ class _BudgetPageState extends State<BudgetPage> {
                             color: black),
                       ),
                       Row(
-                        children: [
+                        children: const [
                           Icon(
                             Icons.add,
                             size: 25,
@@ -62,7 +116,7 @@ class _BudgetPageState extends State<BudgetPage> {
                       )
                     ],
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 25,
                   ),
                   /*Row(
@@ -191,12 +245,13 @@ class _BudgetPageState extends State<BudgetPage> {
                                 style: TextStyle(
                                     fontWeight: FontWeight.w500,
                                     fontSize: 13,
-                                    color: Color(0xff67727d).withOpacity(0.6)),
+                                    color: const Color(0xff67727d)
+                                        .withOpacity(0.6)),
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 15,
                         ),
                         Stack(

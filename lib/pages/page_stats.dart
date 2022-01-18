@@ -1,11 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutterfire_ui/auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:budget_tracker/models/date.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:budget_tracker/theme/colors.dart';
 import 'package:budget_tracker/widget/chart.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({Key? key}) : super(key: key);
@@ -16,14 +17,61 @@ class StatsPage extends StatefulWidget {
 
 class _StatsPageState extends State<StatsPage> {
   int activeDay = 3;
-
   bool showAvg = false;
+  String userId = "";
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: grey.withOpacity(0.05),
-      body: getBody(),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return RegisterScreen(
+            //showAuthActionSwitch: false,
+            headerBuilder: (context, constraints, _) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(
+                      'https://firebase.flutter.dev/img/flutterfire_300x.png'),
+                ),
+              );
+            },
+            subtitleBuilder: (context, action) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  action == AuthAction.signIn
+                      ? 'Welcome to Budget Tracker! Please sign in to continue.'
+                      : 'Welcome to Budget Tracker! Please create an account to continue.',
+                ),
+              );
+            },
+            footerBuilder: (context, _) {
+              return const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Text(
+                  'By signing in, you agree to our terms and conditions.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              );
+            },
+            providerConfigs: const [
+              GoogleProviderConfiguration(clientId: ''),
+              PhoneProviderConfiguration(),
+              EmailProviderConfiguration()
+            ],
+          );
+        }
+
+        // Render your application if authenticated
+        userId = snapshot.data!.uid.toString();
+        return Scaffold(
+          backgroundColor: grey.withOpacity(0.05),
+          body: getBody(),
+        );
+      },
     );
   }
 
@@ -77,7 +125,7 @@ class _StatsPageState extends State<StatsPage> {
                   const SizedBox(
                     height: 25,
                   ),
-                  Container(
+                  SizedBox(
                     height: 24,
                     child: ListView.builder(
                         scrollDirection: Axis.horizontal,
@@ -94,7 +142,7 @@ class _StatsPageState extends State<StatsPage> {
                                 height: 48,
                                 width: 48,
                                 alignment: Alignment.center,
-                                margin: EdgeInsets.only(right: 8),
+                                margin: const EdgeInsets.only(right: 8),
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     color: Colors.blue,

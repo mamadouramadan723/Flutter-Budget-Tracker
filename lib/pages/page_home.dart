@@ -1,6 +1,7 @@
 import 'package:budget_tracker/pages/page_budget.dart';
 import 'package:budget_tracker/pages/page_create_budget.dart';
 import 'package:budget_tracker/pages/page_daily.dart';
+import 'package:budget_tracker/pages/page_daily_add.dart';
 import 'package:budget_tracker/pages/page_profile.dart';
 import 'package:budget_tracker/pages/page_stats.dart';
 import 'package:budget_tracker/theme/colors.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_icons/flutter_icons.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 
 class RootApp extends StatefulWidget {
+  const RootApp({Key? key}) : super(key: key);
 
   @override
   _RootAppState createState() => _RootAppState();
@@ -22,14 +24,13 @@ class _RootAppState extends State<RootApp> {
     StatsPage(),
     BudgetPage(),
     ProfilePage(),
-    CreateBudgetPage()
+    PageDailyAddTransaction()
   ];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-
   }
 
   @override
@@ -39,7 +40,6 @@ class _RootAppState extends State<RootApp> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
         body: getBody(),
         bottomNavigationBar: getFooter(),

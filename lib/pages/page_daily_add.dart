@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterfire_ui/auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:budget_tracker/models/daily.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:budget_tracker/theme/colors.dart';
@@ -8,23 +10,28 @@ import 'package:budget_tracker/models/budget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:budget_tracker/json/create_budget_json.dart';
 
-class CreateBudgetPage extends StatefulWidget {
-  const CreateBudgetPage({Key? key}) : super(key: key);
+class PageDailyAddTransaction extends StatefulWidget {
+  const PageDailyAddTransaction({Key? key}) : super(key: key);
 
   @override
-  _CreateBudgetPageState createState() => _CreateBudgetPageState();
+  _PageDailyAddTransactionState createState() =>
+      _PageDailyAddTransactionState();
 }
 
-class _CreateBudgetPageState extends State<CreateBudgetPage> {
+class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
   int activeCategory = 0;
   String userId = "";
 
-  TextEditingController budgetName =
-      TextEditingController(text: "Grocery Budget");
-  TextEditingController budgetPrice = TextEditingController(text: "\$1500.00");
+  TextEditingController transactionDescription =
+      TextEditingController(text: "");
+  TextEditingController transactionPrice = TextEditingController(text: "");
 
   @override
   Widget build(BuildContext context) {
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+    int diff = now.millisecondsSinceEpoch.toInt() - today.millisecondsSinceEpoch.toInt();
+    debugPrint("++++++"+ diff.toString());
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -102,7 +109,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Create budget",
+                        "Create a Transaction",
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -211,19 +218,20 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "budget name",
+                  "Description",
                   style: TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 13,
                       color: Color(0xff67727d)),
                 ),
                 TextField(
-                  controller: budgetName,
+                  controller: transactionDescription,
                   cursorColor: black,
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.bold, color: black),
                   decoration: const InputDecoration(
-                      hintText: "Enter Budget Name", border: InputBorder.none),
+                      hintText: "Add Description if Needed",
+                      border: InputBorder.none),
                 ),
                 const SizedBox(
                   height: 20,
@@ -237,21 +245,21 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Enter budget",
+                            "Enter Price",
                             style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 13,
                                 color: Color(0xff67727d)),
                           ),
                           TextField(
-                            controller: budgetPrice,
+                            controller: transactionPrice,
                             cursorColor: black,
                             style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
                                 color: black),
                             decoration: const InputDecoration(
-                                hintText: "Enter Budget",
+                                hintText: "Enter Price",
                                 border: InputBorder.none),
                           ),
                         ],
@@ -262,19 +270,35 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        debugPrint('+++++: Uploading.....'+categories[activeCategory]['name'].toString());
+
                         DateTime now = DateTime.now();
                         DateFormat formatter = DateFormat.yMd().add_jm();
-                        String date = formatter.format(now).toString();
-                        String budgetId = userId +
-                            "__" +
-                            DateTime.now().millisecondsSinceEpoch.toString();
-                        String price = budgetPrice.text.toString();
-                        String name = budgetName.text.toString();
 
-                        Budget budget = Budget(userId, budgetId, name, price,
-                            "50000", date, "green");
-                        uploadBudget(budget);
+                        String date = formatter.format(now).toString();
+                        int timeStamp = now.millisecondsSinceEpoch.toInt();
+                        String dailyId = userId + "__" + timeStamp.toString();
+                        double price = 0;
+                        try {
+                          price = double.parse(transactionPrice.text);
+                        } catch (e, s) {
+                          debugPrint(e.toString() + "____" + s.toString());
+                          Fluttertoast.showToast(
+                              msg: "The price must be a valid Number",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.CENTER,
+                              timeInSecForIosWeb: 1,
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                              fontSize: 16.0);
+                          return;
+                        }
+                        String desc = transactionDescription.text.toString();
+                        String name = categories[activeCategory]['name'];
+                        String icon = categories[activeCategory]['icon'];
+
+                        DailyTransaction transaction = DailyTransaction(userId,
+                            dailyId, name, desc, date, price, timeStamp, icon);
+                        uploadTransaction(transaction);
                       },
                       child: Container(
                         width: 50,
@@ -297,17 +321,31 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
       ),
     );
   }
-}
 
-Future<void> uploadBudget(Budget budget) async {
-  CollectionReference budgetRef = FirebaseFirestore.instance
-      .collection('budgets')
-      .doc(budget.userId)
-      .collection("budget");
+  Future<void> uploadTransaction(DailyTransaction transaction) async {
+    debugPrint('+++++: Uploading.....' + transaction.toJson().toString());
 
-  await budgetRef
-      .doc(budget.budgetId)
-      .set(budget.toJson())
-      .then((value) => debugPrint("Budget Uploaded Successfully"))
-      .catchError((error) => debugPrint("Failed to Upload Budget : $error"));
+    CollectionReference budgetRef = FirebaseFirestore.instance
+        .collection('transactions')
+        .doc(transaction.userId)
+        .collection("transaction");
+
+    await budgetRef
+        .doc(transaction.transactionId)
+        .set(transaction.toJson())
+        .then((value) => {
+              transactionDescription.clear(),
+              transactionPrice.clear(),
+              Fluttertoast.showToast(
+                  msg: "Successfully Uploaded",
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.CENTER,
+                  timeInSecForIosWeb: 1,
+                  backgroundColor: Colors.blue,
+                  textColor: Colors.white,
+                  fontSize: 16.0),
+              debugPrint("Budget Uploaded Successfully")
+            })
+        .catchError((error) => debugPrint("Failed to Upload Budget : $error"));
+  }
 }
