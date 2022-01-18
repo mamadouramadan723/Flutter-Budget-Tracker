@@ -30,8 +30,9 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
-    int diff = now.millisecondsSinceEpoch.toInt() - today.millisecondsSinceEpoch.toInt();
-    debugPrint("++++++"+ diff.toString());
+    int diff = now.millisecondsSinceEpoch.toInt() -
+        today.millisecondsSinceEpoch.toInt();
+    debugPrint("++++++" + diff.toString());
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -270,7 +271,6 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                     ),
                     GestureDetector(
                       onTap: () {
-
                         DateTime now = DateTime.now();
                         DateFormat formatter = DateFormat.yMd().add_jm();
 

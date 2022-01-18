@@ -1,11 +1,15 @@
+import 'package:budget_tracker/models/daily.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutterfire_ui/auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:budget_tracker/theme/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:budget_tracker/json/daily_json.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:calendar_timeline/calendar_timeline.dart';
+import 'package:progress_indicator/progress_indicator.dart';
 
 class DailyPage extends StatefulWidget {
   const DailyPage({Key? key}) : super(key: key);
@@ -74,14 +78,23 @@ class _DailyPageState extends State<DailyPage> {
   }
 
   Widget getBody() {
+    var size = MediaQuery.of(context).size;
+
     DateTime now = DateTime.now();
     DateTime startDate = now.subtract(const Duration(days: 180));
     DateTime endDate = now.add(const Duration(days: 180));
 
-    var size = MediaQuery.of(context).size;
+    List<DailyTransaction> transactions = [];
+    final Stream<QuerySnapshot> _transactionsStream = FirebaseFirestore.instance
+        .collection("transactions")
+        .doc(userId)
+        .collection("transaction")
+        .snapshots();
+
     return SingleChildScrollView(
       child: Column(
         children: [
+          //header
           Container(
             decoration: BoxDecoration(color: white, boxShadow: [
               BoxShadow(
@@ -134,92 +147,124 @@ class _DailyPageState extends State<DailyPage> {
           const SizedBox(
             height: 30,
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20),
-            child: Column(
-                children: List.generate(daily.length, (index) {
-              return Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      SizedBox(
-                        width: (size.width - 40) * 0.7,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: grey.withOpacity(0.1),
-                              ),
-                              child: Center(
-                                child: Image.asset(
-                                  daily[index]['icon'],
-                                  width: 30,
-                                  height: 30,
+          //body
+          StreamBuilder<QuerySnapshot>(
+            stream: _transactionsStream,
+            builder:
+                (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting ||
+                  !snapshot.hasData) {
+                debugPrint("Transactions : Connection In Progress...");
+                return const LinearProgressIndicator();
+              }
+
+              if (snapshot.hasError) {
+                debugPrint("Transactions : Something went wrong");
+              }
+
+              if (snapshot.connectionState == ConnectionState.done || snapshot.hasData) {
+                debugPrint("Transactions : Documents exist and data can be retrieved successfully");
+                transactions = snapshot.data!.docs
+                    .map((e) => DailyTransaction.fromJson(
+                        e.data() as Map<String, dynamic>))
+                    .toList();
+
+                debugPrint("Transactions : size "+transactions.length.toString());
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: Column(
+                    children: List.generate(transactions.length, (index) {
+                  return Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          SizedBox(
+                            width: (size.width - 40) * 0.7,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: grey.withOpacity(0.1),
+                                  ),
+                                  child: Center(
+                                    child: Image.asset(
+                                      transactions[index].icon,
+                                      width: 30,
+                                      height: 30,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 15),
+                                SizedBox(
+                                  width: (size.width - 90) * 0.5,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        transactions[index].transactionName,
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            color: black,
+                                            fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        transactions[index].date,
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: black.withOpacity(0.5),
+                                            fontWeight: FontWeight.w400),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
                             ),
-                            const SizedBox(width: 15),
-                            SizedBox(
-                              width: (size.width - 90) * 0.5,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    daily[index]['name'],
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        color: black,
-                                        fontWeight: FontWeight.w500),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    daily[index]['date'],
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: black.withOpacity(0.5),
-                                        fontWeight: FontWeight.w400),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
+                          ),
+                          SizedBox(
+                            width: (size.width - 40) * 0.3,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              //this mainAxisAlignment is unnecessary when we delete "width: (size.width - 40) * 0.x"
+                              children: [
+                                Text(
+                                  transactions[index]
+                                      .transactionPrice
+                                      .toString() + " DH",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                      color: Colors.green),
+                                ),
+                              ],
+                            ),
+                          )
+                        ],
                       ),
-                      SizedBox(
-                        width: (size.width - 40) * 0.3,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          //this mainAxisAlignment is unnecessary when we delete "width: (size.width - 40) * 0.x"
-                          children: [
-                            Text(
-                              daily[index]['price'],
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                  color: Colors.green),
-                            ),
-                          ],
+                      const Padding(
+                        padding: EdgeInsets.only(left: 65, top: 8),
+                        child: Divider(
+                          thickness: 0.8,
                         ),
                       )
                     ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 65, top: 8),
-                    child: Divider(
-                      thickness: 0.8,
-                    ),
-                  )
-                ],
+                  );
+                })),
               );
-            })),
+            },
           ),
+
+          //Footer
           const SizedBox(
             height: 15,
           ),
