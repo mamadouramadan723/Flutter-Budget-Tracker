@@ -1,5 +1,4 @@
 import 'package:budget_tracker/pages/page_budget.dart';
-import 'package:budget_tracker/pages/page_create_budget.dart';
 import 'package:budget_tracker/pages/page_daily.dart';
 import 'package:budget_tracker/pages/page_daily_add.dart';
 import 'package:budget_tracker/pages/page_profile.dart';

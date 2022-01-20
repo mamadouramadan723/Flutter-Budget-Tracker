@@ -1,3 +1,4 @@
+import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterfire_ui/auth.dart';
@@ -10,6 +11,8 @@ import 'package:budget_tracker/models/budget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:budget_tracker/json/create_budget_json.dart';
 
+import 'login_register.dart';
+
 class PageDailyAddTransaction extends StatefulWidget {
   const PageDailyAddTransaction({Key? key}) : super(key: key);
 
@@ -20,6 +23,7 @@ class PageDailyAddTransaction extends StatefulWidget {
 
 class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
   int activeCategory = 0;
+  DateTime activeDay = DateTime.now();
   String userId = "";
 
   TextEditingController transactionDescription =
@@ -28,52 +32,12 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
 
   @override
   Widget build(BuildContext context) {
-    DateTime now = DateTime.now();
-    DateTime today = DateTime(now.year, now.month, now.day);
-    int diff = now.millisecondsSinceEpoch.toInt() -
-        today.millisecondsSinceEpoch.toInt();
-    debugPrint("++++++" + diff.toString());
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return RegisterScreen(
-            //showAuthActionSwitch: false,
-            headerBuilder: (context, constraints, _) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Image.network(
-                      'https://firebase.flutter.dev/img/flutterfire_300x.png'),
-                ),
-              );
-            },
-            subtitleBuilder: (context, action) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  action == AuthAction.signIn
-                      ? 'Welcome to Budget Tracker! Please sign in to continue.'
-                      : 'Welcome to Budget Tracker! Please create an account to continue.',
-                ),
-              );
-            },
-            footerBuilder: (context, _) {
-              return const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Text(
-                  'By signing in, you agree to our terms and conditions.',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              );
-            },
-            providerConfigs: const [
-              GoogleProviderConfiguration(clientId: ''),
-              PhoneProviderConfiguration(),
-              EmailProviderConfiguration()
-            ],
-          );
+          return const AuthGate();
         }
 
         // Render your application if authenticated
@@ -87,7 +51,12 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
   }
 
   Widget getBody() {
+    DateTime now = DateTime.now();
+    DateTime startDate = now.subtract(const Duration(days: 7));
+    DateTime endDate = now.add(const Duration(days: 7));
+
     var size = MediaQuery.of(context).size;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,6 +90,22 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                       )
                     ],
                   ),
+
+                  /*CalendarTimeline(
+                    initialDate: activeDay,
+                    firstDate: startDate,
+                    lastDate: endDate,
+                    onDateSelected: (date) =>
+                    {activeDay = date!, setState(() {})},
+                    leftMargin: 20,
+                    monthColor: Colors.blueGrey,
+                    dayColor: Colors.teal[200],
+                    activeDayColor: Colors.white,
+                    activeBackgroundDayColor: Colors.blue,
+                    dotsColor: Colors.blue,
+                    //selectableDayPredicate: (date) => date.day != 23,
+                    locale: 'en_ISO',
+                  )*/
                 ],
               ),
             ),
@@ -271,11 +256,10 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        DateTime now = DateTime.now();
-                        DateFormat formatter = DateFormat.yMd().add_jm();
 
-                        String date = formatter.format(now).toString();
-                        int timeStamp = now.millisecondsSinceEpoch.toInt();
+                        DateFormat formatter = DateFormat.yMd().add_jm();
+                        String date = formatter.format(activeDay).toString();
+                        int timeStamp = activeDay.millisecondsSinceEpoch.toInt();
                         String dailyId = userId + "__" + timeStamp.toString();
                         double price = 0;
                         try {

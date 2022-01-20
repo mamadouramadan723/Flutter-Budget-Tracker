@@ -9,6 +9,6 @@ Future<void> main() async {
 
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: AuthGate(),
+    home: RootApp(),
   ));
 }

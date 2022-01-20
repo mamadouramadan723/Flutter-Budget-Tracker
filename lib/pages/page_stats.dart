@@ -1,12 +1,19 @@
+import 'package:budget_tracker/models/stats.dart';
+
+import 'login_register.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutterfire_ui/auth.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:budget_tracker/models/date.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:budget_tracker/theme/colors.dart';
-import 'package:budget_tracker/widget/chart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
+import 'package:budget_tracker/models/daily.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:calendar_timeline/calendar_timeline.dart';
+import 'package:progress_indicator/progress_indicator.dart';
+import 'package:date_range_form_field/date_range_form_field.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({Key? key}) : super(key: key);
@@ -16,9 +23,12 @@ class StatsPage extends StatefulWidget {
 }
 
 class _StatsPageState extends State<StatsPage> {
-  int activeDay = 3;
-  bool showAvg = false;
+  DateTime activeDay = DateTime.now();
   String userId = "";
+  int rangeDuration = 5;
+  List<double> total = [];
+  DateTimeRange? myDateRange = DateTimeRange(
+      start: DateTime.now(), end: DateTime.now().add(const Duration(days: 5)));
 
   @override
   Widget build(BuildContext context) {
@@ -26,43 +36,7 @@ class _StatsPageState extends State<StatsPage> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return RegisterScreen(
-            //showAuthActionSwitch: false,
-            headerBuilder: (context, constraints, _) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Image.network(
-                      'https://firebase.flutter.dev/img/flutterfire_300x.png'),
-                ),
-              );
-            },
-            subtitleBuilder: (context, action) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  action == AuthAction.signIn
-                      ? 'Welcome to Budget Tracker! Please sign in to continue.'
-                      : 'Welcome to Budget Tracker! Please create an account to continue.',
-                ),
-              );
-            },
-            footerBuilder: (context, _) {
-              return const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Text(
-                  'By signing in, you agree to our terms and conditions.',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              );
-            },
-            providerConfigs: const [
-              GoogleProviderConfiguration(clientId: ''),
-              PhoneProviderConfiguration(),
-              EmailProviderConfiguration()
-            ],
-          );
+          return const AuthGate();
         }
 
         // Render your application if authenticated
@@ -77,231 +51,151 @@ class _StatsPageState extends State<StatsPage> {
 
   Widget getBody() {
     var size = MediaQuery.of(context).size;
+    List<charts.Series<dynamic, DateTime>> seriesList = [];
+    //List<charts.Series> seriesList = [];
+    bool animate;
+    List<TimeSeriesTotalPrice> data = [];
+    List<DailyTransaction> transactions = [];
 
-    List expenses = [
-      {
-        "icon": Icons.arrow_back,
-        "color": blue,
-        "label": "Income",
-        "cost": "\$6593.75"
-      },
-      {
-        "icon": Icons.arrow_forward,
-        "color": red,
-        "label": "Expense",
-        "cost": "\$2645.50"
-      }
-    ];
+    DateTime now = DateTime.now();
+    DateTime startDate = now.subtract(const Duration(days: 180));
+    DateTime endDate = now.add(const Duration(days: 180));
+    DateTime startSelection = DateTime(myDateRange!.start.year,
+        myDateRange!.start.month, myDateRange!.start.day);
+    DateTime endSelection = DateTime(
+        myDateRange!.end.year, myDateRange!.end.month, myDateRange!.end.day);
+
+    rangeDuration = myDateRange!.duration.inDays.toInt() + 1;
+
+    Stream<QuerySnapshot> _transactionsStream = FirebaseFirestore.instance
+        .collection("transactions")
+        .doc(userId)
+        .collection("transaction")
+        .where('timeStamp',
+            isGreaterThan: startSelection.millisecondsSinceEpoch.toInt())
+        .where('timeStamp',
+            isLessThan:
+                (endSelection.millisecondsSinceEpoch.toInt() + 86400000))
+        .snapshots();
+
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(color: white, boxShadow: [
-              BoxShadow(
-                color: grey.withOpacity(0.01),
-                spreadRadius: 10,
-                blurRadius: 3,
-                // changes position of shadow
-              ),
-            ]),
-            child: Padding(
-              padding: const EdgeInsets.only(
-                  top: 60, right: 20, left: 20, bottom: 25),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        "Stats",
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: black),
-                      ),
-                      Icon(AntDesign.search1)
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 25,
-                  ),
-                  SizedBox(
-                    height: 24,
-                    child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: months.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                activeDay = index;
-                                //debugPrint('++++: $index');
-                              });
-                            },
-                            child: Container(
-                                height: 48,
-                                width: 48,
-                                alignment: Alignment.center,
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.blue,
-                                    boxShadow: const [
-                                      BoxShadow(
-                                          color: Color(0x04000000),
-                                          blurRadius: 10,
-                                          spreadRadius: 10,
-                                          offset: Offset(0.0, 8.0))
-                                    ]),
-                                child: Stack(children: <Widget>[
-                                  Text(
-                                    months[index].label,
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  )
-                                ])),
-                          );
-                        }),
-                  )
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20),
-            child: Container(
-              width: double.infinity,
-              height: 250,
-              decoration: BoxDecoration(
-                  color: white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: grey.withOpacity(0.01),
-                      spreadRadius: 10,
-                      blurRadius: 3,
-                      // changes position of shadow
-                    ),
-                  ]),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        top: 10,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "Net balance",
-                            style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 13,
-                                color: Color(0xff67727d)),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            "\$2446.90",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 25,
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      child: SizedBox(
-                        width: (size.width - 20),
-                        height: 150,
-                        child: LineChart(
-                          mainData(),
-                        ),
-                      ),
-                    )
-                  ],
+        child: Column(children: [
+      //header
+      Padding(
+        padding:
+            const EdgeInsets.only(top: 60, right: 20, left: 20, bottom: 25),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text(
+                  "Stats",
+                  style: TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold, color: black),
                 ),
-              ),
+                Icon(AntDesign.search1)
+              ],
             ),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          Wrap(
-              spacing: 20,
-              children: List.generate(expenses.length, (index) {
-                return Container(
-                  width: (size.width - 60) / 2,
-                  height: 170,
-                  decoration: BoxDecoration(
-                      color: white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: grey.withOpacity(0.01),
-                          spreadRadius: 10,
-                          blurRadius: 3,
-                          // changes position of shadow
-                        ),
-                      ]),
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                        left: 25, right: 25, top: 20, bottom: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: expenses[index]['color']),
-                          child: Center(
-                              child: Icon(
-                            expenses[index]['icon'],
-                            color: white,
-                          )),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              expenses[index]['label'],
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                  color: Color(0xff67727d)),
-                            ),
-                            const SizedBox(
-                              height: 8,
-                            ),
-                            Text(
-                              expenses[index]['cost'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                              ),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                );
-              }))
-        ],
+            const SizedBox(
+              height: 25,
+            ),
+            DateRangeField(
+              firstDate: startDate,
+              lastDate: endDate,
+              enabled: true,
+              initialValue: myDateRange,
+              decoration: const InputDecoration(
+                labelText: 'Date Range',
+                prefixIcon: Icon(Icons.date_range),
+                hintText: 'Please select a start and end date',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                myDateRange = value!;
+                rangeDuration = myDateRange!.duration.inDays.toInt();
+                setState(() {});
+              },
+            ),
+          ],
+        ),
       ),
-    );
+      const SizedBox(
+        height: 30,
+      ),
+      //body
+      StreamBuilder<QuerySnapshot>(
+        stream: _transactionsStream,
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting ||
+              !snapshot.hasData) {
+            debugPrint("Transactions : Connection In Progress...");
+            return const LinearProgressIndicator();
+          }
+
+          if (snapshot.hasError) {
+            debugPrint("Transactions : Something went wrong");
+          }
+
+          if (snapshot.connectionState == ConnectionState.done ||
+              snapshot.hasData) {
+            transactions = snapshot.data!.docs
+                .map((e) =>
+                    DailyTransaction.fromJson(e.data() as Map<String, dynamic>))
+                .toList();
+            double totalInOneDay = 0;
+            int i = 1;
+
+            data.clear();
+
+            debugPrint('***total days selected : $rangeDuration ');
+            while (i <= rangeDuration) {
+              for (var element in transactions) {
+                //for each day we calculate total
+                if (element.timeStamp >=
+                        ((i - 1) * 86400000 +
+                            myDateRange!.start.millisecondsSinceEpoch
+                                .toInt()) &&
+                    element.timeStamp <=
+                        (i * 86400000 +
+                            myDateRange!.start.millisecondsSinceEpoch
+                                .toInt())) {
+                  totalInOneDay = totalInOneDay + element.transactionPrice.toDouble();
+                }
+              }
+              DateTime thisDay = DateTime.fromMillisecondsSinceEpoch(
+                  (i - 1) * 86400000 +
+                      myDateRange!.start.millisecondsSinceEpoch.toInt());
+              debugPrint("*** day $i : $thisDay. total = $totalInOneDay");
+              data.add(TimeSeriesTotalPrice(
+                  DateTime(thisDay.year, thisDay.month, thisDay.day),
+                  totalInOneDay));
+
+              totalInOneDay = 0;
+              i = i + 1;
+            }
+            seriesList.add(charts.Series<TimeSeriesTotalPrice, DateTime>(
+              id: 'Total Expanse',
+              colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+              domainFn: (TimeSeriesTotalPrice totalPrice, _) => totalPrice.time,
+              measureFn: (TimeSeriesTotalPrice totalPrice, _) =>
+                  totalPrice.total,
+              data: data,
+            ));
+          }
+
+          return SizedBox(
+              height: 240,
+              child: charts.TimeSeriesChart(
+                seriesList,
+                animate: false,
+                // Optionally pass in a [DateTimeFactory] used by the chart. The factory
+                // should create the same type of [DateTime] as the data provided. If none
+                // specified, the default creates local date time.
+                dateTimeFactory: const charts.LocalDateTimeFactory(),
+              ));
+        },
+      ),
+    ]));
   }
 }

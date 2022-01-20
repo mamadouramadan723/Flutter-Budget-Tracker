@@ -35,7 +35,7 @@ LineChartData mainData() {
         },
         margin: 8,
       ),*/
-      leftTitles: SideTitles(
+      /*leftTitles: SideTitles(
         showTitles: true,
         getTextStyles: (context, value) => const TextStyle(
           color: Color(0xff67727d),
@@ -54,7 +54,7 @@ LineChartData mainData() {
         },
         reservedSize: 28,
         margin: 12,
-      ),
+      ),*/
     ),
     borderData: FlBorderData(
       show: false,
