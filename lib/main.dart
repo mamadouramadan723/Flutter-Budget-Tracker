@@ -1,4 +1,3 @@
-import 'package:budget_tracker/pages/login_register.dart';
 import 'package:budget_tracker/pages/page_home.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';

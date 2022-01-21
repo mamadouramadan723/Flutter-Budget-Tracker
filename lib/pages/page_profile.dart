@@ -1,13 +1,11 @@
+import 'login_register.dart';
+import 'package:flutter/material.dart';
 import 'package:budget_tracker/models/user.dart';
 import 'package:budget_tracker/theme/colors.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
-import 'package:flutterfire_ui/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
-
-import 'login_register.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);

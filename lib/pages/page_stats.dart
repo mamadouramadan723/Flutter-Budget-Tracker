@@ -1,18 +1,12 @@
-import 'package:budget_tracker/models/stats.dart';
-
 import 'login_register.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutterfire_ui/auth.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:budget_tracker/theme/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:budget_tracker/models/daily.dart';
+import 'package:budget_tracker/models/stats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
-import 'package:calendar_timeline/calendar_timeline.dart';
-import 'package:progress_indicator/progress_indicator.dart';
 import 'package:date_range_form_field/date_range_form_field.dart';
 
 class StatsPage extends StatefulWidget {
@@ -28,7 +22,8 @@ class _StatsPageState extends State<StatsPage> {
   int rangeDuration = 5;
   List<double> total = [];
   DateTimeRange? myDateRange = DateTimeRange(
-      start: DateTime.now(), end: DateTime.now().add(const Duration(days: 5)));
+      start: DateTime.now().subtract(const Duration(days: 7)),
+      end: DateTime.now().add(const Duration(days: 7)));
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +45,7 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   Widget getBody() {
-    var size = MediaQuery.of(context).size;
     List<charts.Series<dynamic, DateTime>> seriesList = [];
-    //List<charts.Series> seriesList = [];
-    bool animate;
     List<TimeSeriesTotalPrice> data = [];
     List<DailyTransaction> transactions = [];
 
@@ -94,7 +86,6 @@ class _StatsPageState extends State<StatsPage> {
                   style: TextStyle(
                       fontSize: 20, fontWeight: FontWeight.bold, color: black),
                 ),
-                Icon(AntDesign.search1)
               ],
             ),
             const SizedBox(
@@ -145,10 +136,8 @@ class _StatsPageState extends State<StatsPage> {
                 .toList();
             double totalInOneDay = 0;
             int i = 1;
-
             data.clear();
 
-            debugPrint('***total days selected : $rangeDuration ');
             while (i <= rangeDuration) {
               for (var element in transactions) {
                 //for each day we calculate total
@@ -160,13 +149,14 @@ class _StatsPageState extends State<StatsPage> {
                         (i * 86400000 +
                             myDateRange!.start.millisecondsSinceEpoch
                                 .toInt())) {
-                  totalInOneDay = totalInOneDay + element.transactionPrice.toDouble();
+                  totalInOneDay =
+                      totalInOneDay + element.transactionPrice.toDouble();
                 }
               }
               DateTime thisDay = DateTime.fromMillisecondsSinceEpoch(
                   (i - 1) * 86400000 +
                       myDateRange!.start.millisecondsSinceEpoch.toInt());
-              debugPrint("*** day $i : $thisDay. total = $totalInOneDay");
+
               data.add(TimeSeriesTotalPrice(
                   DateTime(thisDay.year, thisDay.month, thisDay.day),
                   totalInOneDay));

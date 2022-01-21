@@ -21,9 +21,8 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
   int activeCategory = 0;
   String userId = "";
 
-  TextEditingController budgetName =
-      TextEditingController(text: "Grocery Budget");
-  TextEditingController budgetPrice = TextEditingController(text: "\$1500.00");
+  final TextEditingController _name = TextEditingController(text: "");
+  final TextEditingController _price = TextEditingController(text: "");
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +183,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                       color: Color(0xff67727d)),
                 ),
                 TextField(
-                  controller: budgetName,
+                  controller: _name,
                   cursorColor: black,
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.bold, color: black),
@@ -210,7 +209,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                                 color: Color(0xff67727d)),
                           ),
                           TextField(
-                            controller: budgetPrice,
+                            controller: _price,
                             cursorColor: black,
                             style: const TextStyle(
                                 fontSize: 17,
@@ -228,15 +227,16 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        debugPrint('+++++: Uploading.....'+categories[activeCategory]['name'].toString());
+                        debugPrint('+++++: Uploading.....' +
+                            categories[activeCategory]['name'].toString());
                         DateTime now = DateTime.now();
                         DateFormat formatter = DateFormat.yMd().add_jm();
                         String date = formatter.format(now).toString();
                         String budgetId = userId +
                             "__" +
                             DateTime.now().millisecondsSinceEpoch.toString();
-                        String price = budgetPrice.text.toString();
-                        String name = budgetName.text.toString();
+                        String price = _price.text.toString();
+                        String name = _name.text.toString();
 
                         Budget budget = Budget(userId, budgetId, name, price,
                             "50000", date, "green");

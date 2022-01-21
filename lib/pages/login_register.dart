@@ -1,3 +1,4 @@
+import 'package:budget_tracker/models/user.dart';
 import 'package:budget_tracker/pages/page_home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +9,10 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-
           return RegisterScreen(
             //showAuthActionSwitch: false,
             headerBuilder: (context, constraints, _) {
@@ -45,23 +44,27 @@ class AuthGate extends StatelessWidget {
                 ),
               );
             },
-            providerConfigs: [
+            providerConfigs: const [
               GoogleProviderConfiguration(clientId: ''),
               PhoneProviderConfiguration(),
-              EmailProviderConfiguration(
-                actionCodeSettings: ActionCodeSettings(
-                  url: 'https://budgettracker.page.link',
-                  handleCodeInApp: true,
-                  androidMinimumVersion: '21',
-                  androidPackageName: 'com.bundle.id',
-                  iOSBundleId: 'com.bundle.id',
-                ),
-              ),
+              EmailProviderConfiguration(),
               //FacebookProviderConfiguration(clientId: clientId)
             ],
           );
-
         }
+        /*else if(snapshot.hasData){
+          String userId = snapshot.data!.uid.toString();
+          String name = ""+snapshot.data!.displayName.toString();
+          String dateOfBirth = "";
+          String phoneNumber = ""+snapshot.data!.phoneNumber.toString();
+          String mail = ""+snapshot.data!.email.toString();
+          String imageUrl = ""+snapshot.data!.photoURL.toString();
+          String creditScore = "";
+          MyUser myUser = MyUser(userId, name, dateOfBirth, phoneNumber, mail, imageUrl, creditScore);
+          debugPrint("-------Me : $myUser");
+        }*/
+
+
 
         // Render your application if authenticated
         return const RootApp();

@@ -1,17 +1,14 @@
-import 'package:calendar_timeline/calendar_timeline.dart';
+import 'login_register.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:flutterfire_ui/auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:budget_tracker/models/daily.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:budget_tracker/theme/colors.dart';
-import 'package:budget_tracker/models/budget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:budget_tracker/json/create_budget_json.dart';
-
-import 'login_register.dart';
 
 class PageDailyAddTransaction extends StatefulWidget {
   const PageDailyAddTransaction({Key? key}) : super(key: key);
@@ -22,17 +19,15 @@ class PageDailyAddTransaction extends StatefulWidget {
 }
 
 class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
+  String userId = "";
   int activeCategory = 0;
   DateTime activeDay = DateTime.now();
-  String userId = "";
 
-  TextEditingController transactionDescription =
-      TextEditingController(text: "");
-  TextEditingController transactionPrice = TextEditingController(text: "");
+  final TextEditingController _description = TextEditingController(text: "");
+  final TextEditingController _price = TextEditingController(text: "");
 
   @override
   Widget build(BuildContext context) {
-
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -52,8 +47,8 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
 
   Widget getBody() {
     DateTime now = DateTime.now();
-    DateTime startDate = now.subtract(const Duration(days: 7));
-    DateTime endDate = now.add(const Duration(days: 7));
+    DateTime endDate = now.add(const Duration(days: 30));
+    DateTime startDate = now.subtract(const Duration(days: 30));
 
     var size = MediaQuery.of(context).size;
 
@@ -77,35 +72,37 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
+                    children: const [
+                      Text(
                         "Create a Transaction",
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: black),
                       ),
-                      Row(
-                        children: const [Icon(AntDesign.search1)],
-                      )
                     ],
                   ),
-
-                  /*CalendarTimeline(
+                  CalendarTimeline(
                     initialDate: activeDay,
                     firstDate: startDate,
                     lastDate: endDate,
-                    onDateSelected: (date) =>
-                    {activeDay = date!, setState(() {})},
+                    onDateSelected: (date) => {
+                      activeDay = date!,
+                      //if we select the toDay date then  activeDay = now
+                      if (DateTime(
+                              activeDay.year, activeDay.month, activeDay.day) ==
+                          DateTime(now.year, now.month, now.day))
+                        {activeDay = now},
+                      setState(() {})
+                    },
                     leftMargin: 20,
                     monthColor: Colors.blueGrey,
                     dayColor: Colors.teal[200],
                     activeDayColor: Colors.white,
                     activeBackgroundDayColor: Colors.blue,
                     dotsColor: Colors.blue,
-                    //selectableDayPredicate: (date) => date.day != 23,
                     locale: 'en_ISO',
-                  )*/
+                  )
                 ],
               ),
             ),
@@ -141,8 +138,8 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                     margin: const EdgeInsets.only(
                       left: 10,
                     ),
-                    width: 150,
-                    height: 170,
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
                         color: white,
                         border: Border.all(
@@ -199,7 +196,7 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
             height: 50,
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20),
+            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -211,7 +208,7 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                       color: Color(0xff67727d)),
                 ),
                 TextField(
-                  controller: transactionDescription,
+                  controller: _description,
                   cursorColor: black,
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.bold, color: black),
@@ -238,7 +235,7 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                                 color: Color(0xff67727d)),
                           ),
                           TextField(
-                            controller: transactionPrice,
+                            controller: _price,
                             cursorColor: black,
                             style: const TextStyle(
                                 fontSize: 17,
@@ -256,14 +253,14 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                     ),
                     GestureDetector(
                       onTap: () {
-
                         DateFormat formatter = DateFormat.yMd().add_jm();
                         String date = formatter.format(activeDay).toString();
-                        int timeStamp = activeDay.millisecondsSinceEpoch.toInt();
+                        int timeStamp =
+                            activeDay.millisecondsSinceEpoch.toInt();
                         String dailyId = userId + "__" + timeStamp.toString();
                         double price = 0;
                         try {
-                          price = double.parse(transactionPrice.text);
+                          price = double.parse(_price.text);
                         } catch (e, s) {
                           debugPrint(e.toString() + "____" + s.toString());
                           Fluttertoast.showToast(
@@ -276,7 +273,7 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
                               fontSize: 16.0);
                           return;
                         }
-                        String desc = transactionDescription.text.toString();
+                        String desc = _description.text.toString();
                         String name = categories[activeCategory]['name'];
                         String icon = categories[activeCategory]['icon'];
 
@@ -318,8 +315,8 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
         .doc(transaction.transactionId)
         .set(transaction.toJson())
         .then((value) => {
-              transactionDescription.clear(),
-              transactionPrice.clear(),
+              _description.clear(),
+              _price.clear(),
               Fluttertoast.showToast(
                   msg: "Successfully Uploaded",
                   toastLength: Toast.LENGTH_SHORT,
