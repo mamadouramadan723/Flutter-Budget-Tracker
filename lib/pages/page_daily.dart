@@ -37,6 +37,22 @@ class _DailyPageState extends State<DailyPage> {
         userId = snapshot.data!.uid.toString();
         return Scaffold(
           backgroundColor: grey.withOpacity(0.05),
+          appBar: AppBar(
+            backgroundColor: Colors.blue,
+            title: const Text("Transactions By Bay"),
+            actions: [
+              PopupMenuButton(
+                  itemBuilder: (context) => [
+                        PopupMenuItem(
+                          child: const Text("Sign Out"),
+                          value: 1,
+                          onTap: () async {
+                            await FirebaseAuth.instance.signOut();
+                          },
+                        ),
+                      ])
+            ],
+          ),
           body: getBody(),
         );
       },
@@ -69,25 +85,9 @@ class _DailyPageState extends State<DailyPage> {
         children: [
           //header
           Padding(
-            padding:
-                const EdgeInsets.only(top: 60, right: 20, left: 20, bottom: 25),
+            padding: const EdgeInsets.only(right: 20, left: 20, bottom: 25),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      "Daily Transaction",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: black),
-                    ),
-                  ],
-                ),
-                const SizedBox(
-                  height: 25,
-                ),
                 CalendarTimeline(
                   initialDate: activeDay,
                   firstDate: startDate,
@@ -102,6 +102,12 @@ class _DailyPageState extends State<DailyPage> {
                   dotsColor: Colors.blue,
                   //selectableDayPredicate: (date) => date.day != 23,
                   locale: 'en_ISO',
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 8, top: 8),
+                  child: Divider(
+                    thickness: 0.8,
+                  ),
                 )
               ],
             ),
@@ -139,7 +145,7 @@ class _DailyPageState extends State<DailyPage> {
               }
 
               return SizedBox(
-                  height: 160 * (transactions.length.toDouble()),
+                  height: 120 * (transactions.length.toDouble()),
                   child: ListView(
                       physics: const ClampingScrollPhysics(),
                       children: <Widget>[
@@ -238,7 +244,7 @@ class _DailyPageState extends State<DailyPage> {
                                     child: Divider(
                                       thickness: 0.8,
                                     ),
-                                  )
+                                  ),
                                 ],
                               );
                             }),

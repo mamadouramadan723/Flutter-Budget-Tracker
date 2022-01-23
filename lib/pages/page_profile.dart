@@ -1,3 +1,6 @@
+import 'package:budget_tracker/json/create_budget_json.dart';
+import 'package:budget_tracker/pages/page_create_profile.dart';
+
 import 'login_register.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/models/user.dart';
@@ -24,7 +27,11 @@ class _ProfilePageState extends State<ProfilePage> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const AuthGate();
+          if (FirebaseAuth.instance.currentUser != null) {
+            return const CreateProfile();
+          } else {
+            return const AuthGate();
+          }
         }
 
         // Render your application if authenticated
@@ -59,6 +66,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
         if (snapshot.hasData && !snapshot.data!.exists) {
           debugPrint("Document does not exist");
+
+          return const CreateProfile();
         }
 
         if (snapshot.connectionState == ConnectionState.done) {
@@ -91,12 +100,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ]),
                 child: Padding(
                   padding: const EdgeInsets.only(
-                      top: 60, right: 20, left: 20, bottom: 25),
+                      top: 80, right: 20, left: 20, bottom: 25),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text(
                             "Profile",
                             style: TextStyle(
@@ -104,7 +113,39 @@ class _ProfilePageState extends State<ProfilePage> {
                                 fontWeight: FontWeight.bold,
                                 color: black),
                           ),
-                          Icon(AntDesign.setting)
+                          PopupMenuButton(
+                              onSelected: (result) {
+                                if (result == 2) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const CreateProfile()),
+                                  );
+                                }
+                                if (result == 3) {
+                                  showAlertDialog();
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      child: const Text("Sign Out"),
+                                      value: 1,
+                                      onTap: () async {
+                                        await FirebaseAuth.instance.signOut();
+                                      },
+                                    ),
+                                    const PopupMenuItem(
+                                      child: Text("Update Pro."),
+                                      value: 2,
+                                    ),
+                                    const PopupMenuItem(
+                                      child: Text("Delete Account.",
+                                          style: TextStyle(color: Colors.red)),
+                                      value: 3,
+                                    ),
+                                  ])
+                          //Icon(AntDesign.setting)
                         ],
                       ),
                       const SizedBox(
@@ -113,7 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Row(
                         children: [
                           SizedBox(
-                            width: (size.width - 40) * 0.4,
+                            width: (size.width - 50) * 0.4,
                             child: Stack(
                               children: [
                                 RotatedBox(
@@ -122,23 +163,27 @@ class _ProfilePageState extends State<ProfilePage> {
                                       circularStrokeCap:
                                           CircularStrokeCap.round,
                                       backgroundColor: grey.withOpacity(0.3),
-                                      radius: 110.0,
+                                      radius: 50.0,
                                       lineWidth: 6.0,
-                                      percent: 0.53,
+                                      percent: 0.7,
                                       progressColor: primary),
                                 ),
                                 Positioned(
-                                  top: 16,
-                                  left: 13,
+                                  top: 10,
+                                  left: 10,
                                   child: Container(
-                                    width: 85,
-                                    height: 85,
-                                    decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                            image: NetworkImage(
-                                                user.imageUrl.toString()),
-                                            fit: BoxFit.cover)),
+                                    width: 80,
+                                    height: 80,
+                                    decoration: const BoxDecoration(
+                                        shape: BoxShape.circle),
+                                    child: Center(
+                                      child: user.imageUrl != "null"
+                                          ? Image.network(user.imageUrl)
+                                          : Image.asset(
+                                              categories[7]['icon'],
+                                              fit: BoxFit.cover,
+                                            ),
+                                    ),
                                   ),
                                 )
                               ],
@@ -160,17 +205,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   height: 10,
                                 ),
                                 Text(
-                                  "Mail : " + user.mail.toString(),
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                      color: black.withOpacity(0.4)),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                Text(
-                                  "Birth : " + user.phoneNumber.toString(),
+                                  "Mail : " + user.mail,
                                   style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -180,7 +215,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                   height: 10,
                                 ),
                                 Text(
-                                  "Birth : " + user.dateOfBirth.toString(),
+                                  "Phone Number : " + user.phoneNumber,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: black.withOpacity(0.4)),
+                                ),
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                Text(
+                                  "Birth : " + user.dateOfBirth,
                                   style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -261,6 +306,84 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         );
+      },
+    );
+  }
+
+  void showAlertDialog() {
+    // set up the button
+    Widget okButton = TextButton(
+      child: const Text("OK"),
+      onPressed: () async {
+        CollectionReference user =
+            FirebaseFirestore.instance.collection('users');
+        CollectionReference budget =
+            FirebaseFirestore.instance.collection('budgets');
+        CollectionReference daily =
+            FirebaseFirestore.instance.collection('dailies');
+        CollectionReference transaction =
+            FirebaseFirestore.instance.collection('transactions');
+
+        //delete profile
+        user
+            .doc(userId)
+            .delete()
+            .then((value) => {print("+++++User Deleted")})
+            .catchError((error) => debugPrint("Failed to delete user: $error"));
+
+        //delete budget
+        budget
+            .doc(userId)
+            .delete()
+            .then((value) => {print("+++++Budget Deleted")})
+            .catchError(
+                (error) => debugPrint("Failed to delete budget: $error"));
+
+        //Daily
+        daily
+            .doc(userId)
+            .delete()
+            .then((value) => {print("+++++Daily Deleted")})
+            .catchError(
+                (error) => debugPrint("Failed to delete daily: $error"));
+
+        //transaction
+        transaction
+            .doc(userId)
+            .delete()
+            .then((value) => {print("+++++Transaction Deleted")})
+            .catchError(
+                (error) => debugPrint("Failed to delete transaction: $error"));
+
+        Navigator.pop(context);
+        //delete user
+        await FirebaseAuth.instance.currentUser!.delete();
+        //sign out
+        await FirebaseAuth.instance.signOut();
+      },
+    );
+    Widget cancelButton = TextButton(
+      child: const Text("Cancel"),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: const Text("Account Deletion"),
+      content: const Text("Are You Sure To Delete Your Account"),
+      actions: [
+        cancelButton,
+        okButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
       },
     );
   }

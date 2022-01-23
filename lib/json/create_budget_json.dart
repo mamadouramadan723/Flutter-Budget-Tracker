@@ -5,5 +5,6 @@ const List categories = [
   {"name": "Charity", "icon": "assets/images/charity.png"},
   {"name": "Eating", "icon": "assets/images/eating.png"},
   {"name": "Gift", "icon": "assets/images/gift.png"},
-  {"name": "Other", "icon": "assets/images/other.png"}
+  {"name": "Other", "icon": "assets/images/other.png"},
+  {"name": "Profile", "icon": "assets/images/profile.png"}
 ];

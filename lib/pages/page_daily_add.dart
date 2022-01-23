@@ -39,6 +39,22 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
         userId = snapshot.data!.uid.toString();
         return Scaffold(
           backgroundColor: grey.withOpacity(0.05),
+          appBar: AppBar(
+            backgroundColor: Colors.blue,
+            title: const Text("Create A Transaction"),
+            actions: [
+              PopupMenuButton(
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: const Text("Sign Out"),
+                      value: 1,
+                      onTap: () async {
+                        await FirebaseAuth.instance.signOut();
+                      },
+                    ),
+                  ])
+            ],
+          ),
           body: getBody(),
         );
       },
@@ -67,21 +83,9 @@ class _PageDailyAddTransactionState extends State<PageDailyAddTransaction> {
             ]),
             child: Padding(
               padding: const EdgeInsets.only(
-                  top: 60, right: 20, left: 20, bottom: 25),
+                  top: 10, right: 20, left: 20, bottom: 10),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        "Create a Transaction",
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: black),
-                      ),
-                    ],
-                  ),
                   CalendarTimeline(
                     initialDate: activeDay,
                     firstDate: startDate,

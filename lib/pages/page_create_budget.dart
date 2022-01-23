@@ -1,6 +1,5 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:flutterfire_ui/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:budget_tracker/theme/colors.dart';
@@ -20,6 +19,7 @@ class CreateBudgetPage extends StatefulWidget {
 class _CreateBudgetPageState extends State<CreateBudgetPage> {
   int activeCategory = 0;
   String userId = "";
+
 
   final TextEditingController _name = TextEditingController(text: "");
   final TextEditingController _price = TextEditingController(text: "");
@@ -255,7 +255,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           )

@@ -51,22 +51,10 @@ class AuthGate extends StatelessWidget {
               //FacebookProviderConfiguration(clientId: clientId)
             ],
           );
+
         }
-        /*else if(snapshot.hasData){
-          String userId = snapshot.data!.uid.toString();
-          String name = ""+snapshot.data!.displayName.toString();
-          String dateOfBirth = "";
-          String phoneNumber = ""+snapshot.data!.phoneNumber.toString();
-          String mail = ""+snapshot.data!.email.toString();
-          String imageUrl = ""+snapshot.data!.photoURL.toString();
-          String creditScore = "";
-          MyUser myUser = MyUser(userId, name, dateOfBirth, phoneNumber, mail, imageUrl, creditScore);
-          debugPrint("-------Me : $myUser");
-        }*/
-
-
-
         // Render your application if authenticated
+
         return const RootApp();
       },
     );

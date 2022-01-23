@@ -1,12 +1,15 @@
+import 'dart:math';
 import 'login_register.dart';
 import 'package:flutter/material.dart';
-import 'package:budget_tracker/theme/colors.dart';
+import 'package:charts_flutter/flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_icons/flutter_icons.dart';
 import 'package:budget_tracker/models/daily.dart';
 import 'package:budget_tracker/models/stats.dart';
+import 'package:budget_tracker/theme/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:charts_flutter/src/text_style.dart' as style;
+import 'package:charts_flutter/src/text_element.dart' as text;
 import 'package:date_range_form_field/date_range_form_field.dart';
 
 class StatsPage extends StatefulWidget {
@@ -15,6 +18,8 @@ class StatsPage extends StatefulWidget {
   @override
   _StatsPageState createState() => _StatsPageState();
 }
+
+num? selected = 0;
 
 class _StatsPageState extends State<StatsPage> {
   DateTime activeDay = DateTime.now();
@@ -38,6 +43,22 @@ class _StatsPageState extends State<StatsPage> {
         userId = snapshot.data!.uid.toString();
         return Scaffold(
           backgroundColor: grey.withOpacity(0.05),
+          appBar: AppBar(
+            backgroundColor: Colors.blue,
+            title: const Text("Stats"),
+            actions: [
+              PopupMenuButton(
+                  itemBuilder: (context) => [
+                        PopupMenuItem(
+                          child: const Text("Sign Out"),
+                          value: 1,
+                          onTap: () async {
+                            await FirebaseAuth.instance.signOut();
+                          },
+                        ),
+                      ])
+            ],
+          ),
           body: getBody(),
         );
       },
@@ -75,22 +96,9 @@ class _StatsPageState extends State<StatsPage> {
       //header
       Padding(
         padding:
-            const EdgeInsets.only(top: 60, right: 20, left: 20, bottom: 25),
+            const EdgeInsets.only(top: 10, right: 20, left: 20, bottom: 10),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  "Stats",
-                  style: TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold, color: black),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 25,
-            ),
             DateRangeField(
               firstDate: startDate,
               lastDate: endDate,
@@ -178,14 +186,77 @@ class _StatsPageState extends State<StatsPage> {
               height: 240,
               child: charts.TimeSeriesChart(
                 seriesList,
-                animate: false,
+                animate: true,
                 // Optionally pass in a [DateTimeFactory] used by the chart. The factory
                 // should create the same type of [DateTime] as the data provided. If none
                 // specified, the default creates local date time.
                 dateTimeFactory: const charts.LocalDateTimeFactory(),
+
+                behaviors: [
+                  charts.LinePointHighlighter(
+                      symbolRenderer: CustomCircleSymbolRenderer()),
+                ],
+                selectionModels: [
+                  charts.SelectionModelConfig(
+                      changedListener: (SelectionModel model) {
+                    selected = model.selectedSeries[0]
+                        .measureFn(model.selectedDatum[0].index);
+                  })
+                ],
               ));
         },
       ),
     ]));
+  }
+}
+
+class CustomCircleSymbolRenderer extends charts.CircleSymbolRenderer {
+  @override
+  void paint(charts.ChartCanvas canvas, Rectangle<num> bounds,
+      {List<int>? dashPattern,
+      FillPatternType? fillPattern,
+      charts.Color? fillColor,
+      charts.Color? strokeColor,
+      double? strokeWidthPx}) {
+    super.paint(canvas, bounds,
+        dashPattern: dashPattern,
+        fillColor: charts.Color.white,
+        strokeColor: charts.Color.black,
+        strokeWidthPx: 1);
+
+    // Draw a bubble
+
+    final num bubbleHight = 40;
+    final num bubbleWidth = 80;
+    final num bubbleRadius = bubbleHight / 2.0;
+    final num bubbleBoundLeft = bounds.left;
+    final num bubbleBoundTop = bounds.top - bubbleHight;
+
+    canvas.drawRRect(
+      Rectangle(bubbleBoundLeft, bubbleBoundTop, bubbleWidth, bubbleHight),
+      fill: charts.Color.fromHex(code: "#ffffff"),
+      stroke: charts.Color.black,
+      radius: bubbleRadius,
+      roundTopLeft: true,
+      roundBottomLeft: true,
+      roundBottomRight: true,
+      roundTopRight: true,
+    );
+
+    // Add text inside the bubble
+
+    final textStyle = style.TextStyle();
+    textStyle.color = charts.Color.black;
+    textStyle.fontSize = 12;
+
+    final text.TextElement textElement =
+        text.TextElement(selected.toString(), style: textStyle);
+
+    final int textElementBoundsLeft = ((bounds.left +
+            (bubbleWidth - textElement.measurement.horizontalSliceWidth) / 2))
+        .round();
+    final int textElementBoundsTop = (bounds.top - 25).round();
+
+    canvas.drawText(textElement, textElementBoundsLeft, textElementBoundsTop);
   }
 }
